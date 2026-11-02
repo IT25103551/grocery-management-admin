@@ -1,0 +1,2 @@
+﻿A001,superadmin,super@grocery.com,super123,0771234567,Head Office Colombo,SUPER,Never,true
+A004,staff2,staff2@grocery.com,staff456,0718765432,Warehouse Galle,STAFF,2026-10-28 11:05:00,false
