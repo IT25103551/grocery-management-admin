@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<title>Manage Admins</title>
+<main>
+    <div class="container mt-4"
+         th:with="isSuper=${session.loggedInUser.adminLevel == 'SUPER'},
+                  myId=${session.loggedInUser.id}">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Admin Accounts</h2>
+            <a th:href="@{/admin/register}" th:if="${isSuper}" class="btn btn-success">+ New Admin</a>
+        </div>
+
+        <!-- Messages -->
+        <div th:if="${param.added}"        class="alert alert-success">Admin registered.</div>
+        <div th:if="${param.updated}"      class="alert alert-success">Admin details updated.</div>
+        <div th:if="${param.levelChanged}" class="alert alert-success">Admin level updated.</div>
+        <div th:if="${param.toggled}"      class="alert alert-info">Admin status changed.</div>
+        <div th:if="${param.deleted}"      class="alert alert-warning">Admin deleted.</div>
+        <div th:if="${param.selfAction}"   class="alert alert-danger">You cannot delete, deactivate or change the level of your own account.</div>
+        <div th:if="${param.denied}"       class="alert alert-danger">Only an active Super Admin can do that.</div>
+
+        <!-- Search -->
+        <form th:action="@{/admin/list}" method="get" class="d-flex gap-2 mb-3" style="max-width: 480px;">
+            <input type="text" name="keyword" class="form-control"
+                   placeholder="Search by username, email or level" th:value="${keyword}">
+            <button type="submit" class="btn btn-outline-success">Search</button>
+            <a th:href="@{/admin/list}" th:if="${keyword != ''}" class="btn btn-outline-secondary">Clear</a>
+        </form>
+
+        <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Level</th>
+                <th>Last Login</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${admins}">
+                <td th:text="${a.id}" class="small"></td>
+                <td>
+                    <span th:text="${a.username}"></span>
+                    <span th:if="${a.id == myId}" class="badge bg-light text-dark border ms-1">You</span>
+                </td>
+                <td th:text="${a.email}"></td>
+                <td th:text="${a.phone}"></td>
+
+                <!-- Level: super admins can change it (not their own) -->
+                <td>
+                    <form th:if="${isSuper and a.id != myId}" th:action="@{/admin/level}"
+                          method="post" style="display:inline">
+                        <input type="hidden" name="id" th:value="${a.id}">
+                        <select name="adminLevel" class="form-select form-select-sm d-inline-block w-auto"
+                                onchange="this.form.submit()">
+                            <option value="STAFF"   th:selected="${a.adminLevel == 'STAFF'}">Staff</option>
+                            <option value="MANAGER" th:selected="${a.adminLevel == 'MANAGER'}">Manager</option>
+                            <option value="SUPER"   th:selected="${a.adminLevel == 'SUPER'}">Super</option>
+                        </select>
+                    </form>
+                    <span th:unless="${isSuper and a.id != myId}" th:text="${a.adminLevel}"></span>
+                </td>
+
+                <td th:text="${a.lastLogin}" class="small"></td>
+
+                <td>
+                    <span th:class="${a.active} ? 'badge bg-success' : 'badge bg-secondary'"
+                          th:text="${a.active} ? 'Active' : 'Inactive'"></span>
+                </td>
+
+                <td class="text-nowrap">
+                    <a th:if="${isSuper or a.id == myId}" th:href="@{/admin/edit(id=${a.id})}"
+                       class="btn btn-sm btn-outline-primary">Edit</a>
+
+                    <th:block th:if="${isSuper and a.id != myId}">
+                        <form th:action="@{/admin/toggle}" method="post" style="display:inline">
+                            <input type="hidden" name="id" th:value="${a.id}">
+                            <button type="submit"
+                                    th:class="${a.active} ? 'btn btn-sm btn-outline-warning ms-1' : 'btn btn-sm btn-outline-success ms-1'"
+                                    th:text="${a.active} ? 'Deactivate' : 'Activate'"></button>
+                        </form>
+
+                        <form th:action="@{/admin/delete}" method="post" style="display:inline"
+                              onsubmit="return confirm('Delete this admin? This cannot be undone.')">
+                            <input type="hidden" name="id" th:value="${a.id}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Delete</button>
+                        </form>
+                    </th:block>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(admins)}">
+                <td colspan="8" class="text-center text-muted">No admin accounts found.</td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+    </div>
+</main>
+</html>
